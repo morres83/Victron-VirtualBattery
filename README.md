@@ -29,7 +29,7 @@ This way you have full control over how and which information flows through the 
 - Etc.
 
 ## Example flow
-
+TO BE UPDATED MQTT
 see file exampleflow.json you can copy the contents to node-red and import it all at once.
 
 ![screenshot of node-red flow](https://github.com/arrow1800/Victron-VirtualBattery/blob/main/img/node-red-screenshot.png)
@@ -37,30 +37,30 @@ see file exampleflow.json you can copy the contents to node-red and import it al
 ## How to - CerboGX
 
 Installation:
-- create /data/dbus-virtual-battery directory
+- create /data/dbus-virtualbattery_mqtt directory
 - copy files to this folder
-- chmod a+x /data/dbus-virtual-battery/install.sh
-- ./data/dbus-virtual-battery/install.sh
+- chmod a+x /data/dbus-virtualbattery_mqtt/install.sh
+- ./data/dbus-virtualbattery_mqtt/install.sh
 
 
 
 The service now starts automatically after a start/restart of the Venus OS
 
 ## Architecture
-
+TO BE UPDATED MQTT
 ![virtual battery architecture](https://github.com/arrow1800/Victron-VirtualBattery/blob/main/img/architecture.png)
 
 ### Reading data
 
-Reading data is done from within node-red. the most easiest way is using the default blue victron module nodes. 
+Reading data is done from within node-red. the most easiest way is using the default blue victron module nodes. Note: might not work upon reboot. To be investigated.
 
 ### Sending data 
 
-As can be seen in the architecture image. The virtual battery driver itself sends requests to a running REST api in node-red. Node-red replies with a response (including all virtual battery settings) which is then processed by the virtual battery itself (python file)
+As can be seen in the architecture image. The virtual battery driver itself connects to a MQTT server, which needs to provide all applicable data.
 
 ### Changing data
 
-All properties (soc, voltage, etc) are stored in flow variables. when the battery driver sends a request to node-red, node-red retrieves all this variables and constructs a dictionary that is send back. this is done in the function block named: flow to dictionary
+All properties (soc, voltage, etc) are stored in flow variables and they get cyclically transmitted to an MQTT broker.
 
 setting other max discharge values for example can be done by changing the current function blocks that are connected to the 'every second trigger' or just add new ones. make sure the result always ends up in one of the following flow variable names:
 
