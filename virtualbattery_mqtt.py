@@ -109,7 +109,7 @@ def on_message(client, userdata, msg):
 
 class DbusVirtualBatService(object):
     
-    def __init__(self, servicename='com.victronenergy.battery.virtual'):
+    def __init__(self, servicename='com.victronenergy.battery.virtual_mqtt'):
         self._dbusservice = VeDbusService(servicename)
         self._dbusConn = dbus.SessionBus()  if 'DBUS_SESSION_BUS_ADDRESS' in os.environ else dbus.SystemBus()
         
@@ -118,6 +118,8 @@ class DbusVirtualBatService(object):
 			deviceinstance = 14, productid = 0, productname = 'VirtualBattery', firmwareversion = 0.2, 
             hardwareversion = '0.0', connected = 1)
 
+        self._dbusservice.add_path('/UpdateIndex', 0)
+        
         # Create DC paths        
         self._dbusservice.add_path('/Dc/0/Voltage', None, writeable=True, gettextcallback=lambda a, x: "{:.2f}V".format(x))
         self._dbusservice.add_path('/Dc/0/Current', None, writeable=True, gettextcallback=lambda a, x: "{:.1f}A".format(x))
