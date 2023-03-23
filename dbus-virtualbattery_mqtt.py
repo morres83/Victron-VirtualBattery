@@ -5,7 +5,7 @@ import os
 import dbus
 # from settings import *
 from datetime import datetime as dt         # for UTC time stamps for logging
-import time as tt                           # for charge measurement
+import time                           
 import paho.mqtt.client as mqtt
 import json
 try:
@@ -23,6 +23,9 @@ broker_address = "localhost"
 MQTTNAME = "venusMQTT"
 virtualBatteryMQTTPath = "virtualbattery/data"
 
+# Global dbus object
+dbusObj = None
+
 # Variblen setzen
 mqttConnected = 0
 voltage, current, power = 0, 0, 0
@@ -31,6 +34,7 @@ maxCellVoltage, minCellVoltage = 0, 0
 modulesBlockingCharge = 0
 maxChargeCurrent, maxDischargeCurrent, maxChargeVoltage = 0, 0, 0
 internalFailure = 0
+lastMessage = time.time()
 
 def setFailsafeSettings():
     global maxChargeCurrent, maxDischargeCurrent, maxChargeVoltage, internalFailure
@@ -38,6 +42,13 @@ def setFailsafeSettings():
     maxDischargeCurrent = 0
     maxChargeVoltage = 53.6
     internalFailure = 2
+    dbusObj._update()
+
+def checkLastMessage():
+    if (time.time() - lastMessage > 60):
+        logging.info(f'{dt.now()} Timeout on MQTT message. Setting failsafe...')
+        setFailsafeSettings()
+    return True    
 
 def on_disconnect(client, userdata, rc):
     global mqttConnected
@@ -71,9 +82,9 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
 
     try:
-
+        global lastMessage, internalFailure
         global voltage, current, power, soc #mandatory
-        global maxCellTemperature, minCellTemperature, internalFailure
+        global maxCellTemperature, minCellTemperature
         global maxCellVoltage, minCellVoltage, modulesBlockingCharge
         global maxChargeCurrent, maxDischargeCurrent, maxChargeVoltage #mandatory
         if msg.topic == virtualBatteryMQTTPath:   # JSON String vom Broker
@@ -94,7 +105,9 @@ def on_message(client, userdata, msg):
                 maxDischargeCurrent = float(jsonpayload["MaxDischargeCurrent"])
                 maxChargeVoltage = float(jsonpayload["MaxChargeVoltage"])
                 internalFailure = 0
+                lastMessage = time.time()
 
+                dbusObj._update()
             else:
                 print("Answer from MQTT was null and was ignored")
     except KeyError:
@@ -115,7 +128,7 @@ class DbusVirtualBatService(object):
         
         # Create the mandatory objects
         self._dbusservice.add_mandatory_paths(processname = __file__, processversion = '0.0', connection = 'Virtual',
-			deviceinstance = 14, productid = 0, productname = 'VirtualBattery', firmwareversion = 0.2, 
+			deviceinstance = 14, productid = 0, productname = 'VirtualBattery', firmwareversion = 0.3, 
             hardwareversion = '0.0', connected = 1)
 
         self._dbusservice.add_path('/UpdateIndex', 0)
@@ -169,7 +182,7 @@ class DbusVirtualBatService(object):
         self._dbusservice.add_path('/Info/MaxDischargeCurrent', None, writeable=True, gettextcallback=lambda a, x: "{:.0f}A".format(x))
         self._dbusservice.add_path('/Info/MaxChargeVoltage', None, writeable=True, gettextcallback=lambda a, x: "{:.1f}V".format(x))
 
-        GLib.timeout_add(1000, self._update)    
+        #GLib.timeout_add(1000, self._update)    
     
     
     def _update(self):  
@@ -225,12 +238,13 @@ class DbusVirtualBatService(object):
         return True
     
 def main():
+    global dbusObj;
     logging.basicConfig(filename = 'virtualbattery.log', level=logging.INFO)
 
     from dbus.mainloop.glib import DBusGMainLoop
     # Have a mainloop, so we can send/receive asynchronous calls to and from dbus
     DBusGMainLoop(set_as_default=True)
-    DbusVirtualBatService()
+    dbusObj = DbusVirtualBatService()
 
     logging.info(f'{dt.now()} Connected to dbus')
 
@@ -242,6 +256,8 @@ def main():
     client.connect(broker_address)  # connect to broker
 
     client.loop_start()
+
+    GLib.timeout_add_seconds(60, checkLastMessage)
 
     mainloop = GLib.MainLoop()
     mainloop.run()
