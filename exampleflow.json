@@ -1,0 +1,2620 @@
+[
+    {
+        "id": "b30afe078298449f",
+        "type": "tab",
+        "label": "Devices to virtual battery",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "27bb72e6617bf2de",
+        "type": "comment",
+        "z": "b30afe078298449f",
+        "name": "First battery with BMS",
+        "info": "",
+        "x": 280,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "c8d1a1aecd53c39f",
+        "type": "comment",
+        "z": "b30afe078298449f",
+        "name": "Second battery with BMS",
+        "info": "",
+        "x": 290,
+        "y": 1440,
+        "wires": []
+    },
+    {
+        "id": "e94f5a6fbd1b1195",
+        "type": "inject",
+        "z": "b30afe078298449f",
+        "name": "every sec",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.3",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 190,
+        "y": 1940,
+        "wires": [
+            [
+                "f112f29d4b27966a",
+                "ac088e2598501193",
+                "ebdc889faa59f54d",
+                "8e00ed076e4a543c"
+            ]
+        ]
+    },
+    {
+        "id": "5cf3f4edfaf9b08c",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "maxDischargeCurrent",
+        "topi": "topic",
+        "x": 670,
+        "y": 2040,
+        "wires": [
+            [
+                "768c58456493311d"
+            ]
+        ]
+    },
+    {
+        "id": "f112f29d4b27966a",
+        "type": "function",
+        "z": "b30afe078298449f",
+        "name": "calculate max (dis)charge current",
+        "func": "const linearDCLstartV = 3.28;\nconst linearDCLendV = 3.05;\nconst linearDCLmaxA = 100;\n\nlet minCellV = flow.get('MinCellVoltage');\n\nlet DCL;\n\nlet CCL1 = flow.get('CCL1');\nlet CCL2 = flow.get('CCL2');\nlet CCL = CCL1 < CCL2 ? CCL1 : CCL2;\n\nif (minCellV >= linearDCLendV && minCellV < linearDCLstartV) {\n    DCL = (minCellV - linearDCLendV) * linearDCLmaxA/(linearDCLstartV-linearDCLendV)\n}\nelse if (minCellV < linearDCLendV) DCL = 0;\nelse {\n    let DCL1 = flow.get('DCL1');\n    let DCL2 = flow.get('DCL2');\n    DCL = DCL1 < DCL2 ? DCL1 : DCL2;\n}\n\nmsg.maxChargeCurrent = CCL;\nmsg.maxDischargeCurrent = DCL;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 2040,
+        "wires": [
+            [
+                "5cf3f4edfaf9b08c",
+                "d2206dc174d9c178"
+            ]
+        ]
+    },
+    {
+        "id": "18bc2b48a2d062bb",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MaxChargeCurrent",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MaxChargeCurrent",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 2080,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d2206dc174d9c178",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbei",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "maxChargeCurrent",
+        "topi": "topic",
+        "x": 670,
+        "y": 2080,
+        "wires": [
+            [
+                "18bc2b48a2d062bb"
+            ]
+        ]
+    },
+    {
+        "id": "768c58456493311d",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MaxDischargeCurrent",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MaxDischargeCurrent",
+                "pt": "flow",
+                "to": "maxDischargeCurrent",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 900,
+        "y": 2040,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ac088e2598501193",
+        "type": "function",
+        "z": "b30afe078298449f",
+        "name": "calculate power",
+        "func": "let bankVoltage = flow.get('Voltage')\nlet bankCurrent = flow.get('Current')\n\nmsg.payload = bankVoltage * bankCurrent\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 2000,
+        "wires": [
+            [
+                "f75a8c99e3b98808"
+            ]
+        ]
+    },
+    {
+        "id": "f75a8c99e3b98808",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "payload",
+        "topi": "topic",
+        "x": 670,
+        "y": 2000,
+        "wires": [
+            [
+                "290df887322d700a"
+            ]
+        ]
+    },
+    {
+        "id": "b872dc667c6dc2b8",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.Power",
+        "rules": [
+            {
+                "t": "set",
+                "p": "Power",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 990,
+        "y": 2000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ebdc889faa59f54d",
+        "type": "function",
+        "z": "b30afe078298449f",
+        "name": "calculate min/max cell voltage",
+        "func": "let minCellV1 = flow.get('minCellVoltage1');\nlet maxCellV1 = flow.get('maxCellVoltage1');\nlet minCellV2 = flow.get('minCellVoltage2');\nlet maxCellV2 = flow.get('maxCellVoltage2');\nlet minCellV = minCellV1 < minCellV2 ? minCellV1 : minCellV2;\nlet maxCellV = maxCellV1 > maxCellV2 ? maxCellV1 : maxCellV2;\n\n\nmsg.mincellv = minCellV;\nmsg.maxcellv = maxCellV;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 1860,
+        "wires": [
+            [
+                "384d62630a936018",
+                "874749512cd28a50"
+            ]
+        ]
+    },
+    {
+        "id": "384d62630a936018",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "mincellv",
+        "topi": "topic",
+        "x": 670,
+        "y": 1860,
+        "wires": [
+            [
+                "cbbd3c2f72730274"
+            ]
+        ]
+    },
+    {
+        "id": "cbbd3c2f72730274",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MinCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MinCellVoltage",
+                "pt": "flow",
+                "to": "mincellv",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 870,
+        "y": 1860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "874749512cd28a50",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "maxcellv",
+        "topi": "topic",
+        "x": 670,
+        "y": 1820,
+        "wires": [
+            [
+                "0e83fa766732c316"
+            ]
+        ]
+    },
+    {
+        "id": "0e83fa766732c316",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MaxCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MaxCellVoltage",
+                "pt": "flow",
+                "to": "maxcellv",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 880,
+        "y": 1820,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8e00ed076e4a543c",
+        "type": "function",
+        "z": "b30afe078298449f",
+        "name": "calculate maxChargeVoltage",
+        "func": "let CVL1 = flow.get('CVL1');\nlet CVL2 = flow.get('CVL2');\nlet CVL = CVL1 < CVL2 ? CVL1 : CVL2;\n\nif (flow.get('MaxCellVoltage') > 3.58) CVL = flow.get('Voltage')-0.1;\n\nmsg.payload = CVL;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 1960,
+        "wires": [
+            [
+                "6ea8af151a67c294"
+            ]
+        ]
+    },
+    {
+        "id": "6ea8af151a67c294",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "payload",
+        "topi": "topic",
+        "x": 670,
+        "y": 1960,
+        "wires": [
+            [
+                "ed6213af9bb675a0"
+            ]
+        ]
+    },
+    {
+        "id": "ed6213af9bb675a0",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MaxChargeVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MaxChargeVoltage",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 1960,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ded021aee09d6c9c",
+        "type": "inject",
+        "z": "b30afe078298449f",
+        "name": "",
+        "props": [
+            {
+                "p": "maxChargeCurrent",
+                "v": "30",
+                "vt": "num"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 250,
+        "y": 2140,
+        "wires": [
+            [
+                "f77a823c903f7fd7",
+                "d2206dc174d9c178"
+            ]
+        ]
+    },
+    {
+        "id": "f77a823c903f7fd7",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.MaxChargeCurrent",
+        "rules": [
+            {
+                "t": "set",
+                "p": "MaxChargeCurrent",
+                "pt": "flow",
+                "to": "maxChargeCurrent",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 2140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c4ba91c8ea1fb907",
+        "type": "template",
+        "z": "b30afe078298449f",
+        "name": "",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "{\"Voltage\": {{flow.Voltage}},\n\"Current\": {{flow.Current}},\n\"Power\": {{flow.Power}},\n\"Soc\": {{flow.Soc}},\n\"MaxCellVoltage\": {{flow.MaxCellVoltage}},\n\"MinCellVoltage\": {{flow.MinCellVoltage}},\n\"ModulesBlockingCharge\": {{flow.ModulesBlockingCharge}},\n\"MaxChargeCurrent\": {{flow.MaxChargeCurrent}},\n\"MaxDischargeCurrent\": {{flow.MaxDischargeCurrent}},\n\"MaxChargeVoltage\": {{flow.MaxChargeVoltage}}}",
+        "output": "json",
+        "x": 400,
+        "y": 2240,
+        "wires": [
+            [
+                "6f07f5aaccba5d4d"
+            ]
+        ]
+    },
+    {
+        "id": "b4997495566ebbdf",
+        "type": "inject",
+        "z": "b30afe078298449f",
+        "name": "every sec",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.3",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 190,
+        "y": 2240,
+        "wires": [
+            [
+                "c4ba91c8ea1fb907"
+            ]
+        ]
+    },
+    {
+        "id": "6f07f5aaccba5d4d",
+        "type": "rbe",
+        "z": "b30afe078298449f",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "payload",
+        "topi": "topic",
+        "x": 550,
+        "y": 2240,
+        "wires": [
+            [
+                "47898bb6e531c12a"
+            ]
+        ]
+    },
+    {
+        "id": "47898bb6e531c12a",
+        "type": "mqtt out",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "virtualbattery/data",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "0242d5524874fe79",
+        "x": 770,
+        "y": 2240,
+        "wires": []
+    },
+    {
+        "id": "290df887322d700a",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "round",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round(payload, 2)\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 830,
+        "y": 2000,
+        "wires": [
+            [
+                "b872dc667c6dc2b8"
+            ]
+        ]
+    },
+    {
+        "id": "988e0d7c8ae30d40",
+        "type": "mqtt out",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "R/nnnnnnnn/keepalive",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "0242d5524874fe79",
+        "x": 500,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "07256c434720b5c2",
+        "type": "inject",
+        "z": "b30afe078298449f",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "[\"battery/#\"]",
+        "payloadType": "str",
+        "x": 210,
+        "y": 60,
+        "wires": [
+            [
+                "988e0d7c8ae30d40"
+            ]
+        ]
+    },
+    {
+        "id": "3a7f24e350ad4056",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 270,
+        "y": 320,
+        "wires": [
+            [
+                "1422a15e7ea0662c"
+            ]
+        ]
+    },
+    {
+        "id": "3df7c68d05820d92",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$split(_topic, \"/\")[3]\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 630,
+        "y": 320,
+        "wires": [
+            [
+                "a4958b481233cb7b"
+            ]
+        ]
+    },
+    {
+        "id": "1422a15e7ea0662c",
+        "type": "switch",
+        "z": "b30afe078298449f",
+        "name": "",
+        "property": "payload.value",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "JKBMS",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 450,
+        "y": 320,
+        "wires": [
+            [
+                "3df7c68d05820d92"
+            ]
+        ]
+    },
+    {
+        "id": "a4958b481233cb7b",
+        "type": "join",
+        "z": "b30afe078298449f",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 830,
+        "y": 320,
+        "wires": [
+            [
+                "9216025ddb5562ab"
+            ]
+        ]
+    },
+    {
+        "id": "9216025ddb5562ab",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "bmsDeviceID1",
+                "pt": "flow",
+                "to": "$lookup(payload,$keys(payload)[0])",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "bmsDeviceID2",
+                "pt": "flow",
+                "to": "$lookup(payload,$keys(payload)[1])",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1030,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "53a4d65143c470c3",
+        "type": "inject",
+        "z": "b30afe078298449f",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 170,
+        "y": 220,
+        "wires": [
+            [
+                "040e7cc9da09f26b",
+                "7d221366d7ef9de1"
+            ]
+        ]
+    },
+    {
+        "id": "7d221366d7ef9de1",
+        "type": "template",
+        "z": "b30afe078298449f",
+        "name": "BMS Id topics",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "[\"N/{{flow.VenusID}}/battery/1/HardwareVersion\",\n\"N/{{flow.VenusID}}/battery/2/HardwareVersion\",\n\"N/{{flow.VenusID}}/battery/3/HardwareVersion\",\n\"N/{{flow.VenusID}}/battery/4/HardwareVersion\"]",
+        "output": "json",
+        "x": 380,
+        "y": 220,
+        "wires": [
+            [
+                "49803dc84994d23c"
+            ]
+        ]
+    },
+    {
+        "id": "040e7cc9da09f26b",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "VenusID",
+                "pt": "flow",
+                "to": "nnnnnnnn",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 390,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "49803dc84994d23c",
+        "type": "function",
+        "z": "b30afe078298449f",
+        "name": "Subscription creator",
+        "func": "let outputMsgs = []\n\nfor (var w in msg.payload) {\n    outputMsgs.push({topic:msg.payload[w], action:\"subscribe\"});\n}\nreturn [outputMsgs];",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 220,
+        "wires": [
+            [
+                "3a7f24e350ad4056"
+            ]
+        ]
+    },
+    {
+        "id": "5a16766454474414",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 540,
+        "wires": [
+            [
+                "65a487a0fe6518a6"
+            ]
+        ]
+    },
+    {
+        "id": "9af6b9dcee9ab36e",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 Soc",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Soc\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 650,
+        "y": 540,
+        "wires": [
+            [
+                "5a16766454474414"
+            ]
+        ]
+    },
+    {
+        "id": "58e680c32844b7f6",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 Voltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Dc/0/Voltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 660,
+        "wires": [
+            [
+                "32862edd5ccf31bd"
+            ]
+        ]
+    },
+    {
+        "id": "7a6fe6e3998143d2",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 Current",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Dc/0/Current\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 380,
+        "wires": [
+            [
+                "d9d63cb5637872f2"
+            ]
+        ]
+    },
+    {
+        "id": "57fcd0b8a1a6c5b7",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 ModulesBlockingCharge",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/NrOfModulesBlockingCharge\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 630,
+        "y": 780,
+        "wires": [
+            [
+                "166c14087c7d0ca8"
+            ]
+        ]
+    },
+    {
+        "id": "32862edd5ccf31bd",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 660,
+        "wires": [
+            [
+                "4cfb13b96af141ab"
+            ]
+        ]
+    },
+    {
+        "id": "d9d63cb5637872f2",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 380,
+        "wires": [
+            [
+                "68b0a7430466a7cb"
+            ]
+        ]
+    },
+    {
+        "id": "166c14087c7d0ca8",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 780,
+        "wires": [
+            [
+                "42ea29a85faf5240"
+            ]
+        ]
+    },
+    {
+        "id": "98eb6b6aa7cf7d3a",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 Soc",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Soc\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 650,
+        "y": 600,
+        "wires": [
+            [
+                "114ff7155a2178e3"
+            ]
+        ]
+    },
+    {
+        "id": "6dafa12933d141be",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 Voltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Dc/0/Voltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 720,
+        "wires": [
+            [
+                "b658ae6323757e7b"
+            ]
+        ]
+    },
+    {
+        "id": "ce78e84f02cf05ad",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 Current",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Dc/0/Current\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 460,
+        "wires": [
+            [
+                "9bce472f82d11e30"
+            ]
+        ]
+    },
+    {
+        "id": "581fb6c4bb99ab5a",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 ModulesBlockingCharge",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/NrOfModulesBlockingCharge\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 630,
+        "y": 840,
+        "wires": [
+            [
+                "c02e9afb6e44928f"
+            ]
+        ]
+    },
+    {
+        "id": "114ff7155a2178e3",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 600,
+        "wires": [
+            [
+                "c93c34ea9876d2fe"
+            ]
+        ]
+    },
+    {
+        "id": "b658ae6323757e7b",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 720,
+        "wires": [
+            [
+                "e97a5840f372c2b0"
+            ]
+        ]
+    },
+    {
+        "id": "9bce472f82d11e30",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 460,
+        "wires": [
+            [
+                "67303ad5a2c17f41"
+            ]
+        ]
+    },
+    {
+        "id": "c02e9afb6e44928f",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 870,
+        "y": 840,
+        "wires": [
+            [
+                "c1a9c65a5383bf26"
+            ]
+        ]
+    },
+    {
+        "id": "d08a1d11e00226d4",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.current",
+        "rules": [
+            {
+                "t": "set",
+                "p": "Current",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1610,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4a124fdd844bcd85",
+        "type": "sum",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "x": 1270,
+        "y": 420,
+        "wires": [
+            [
+                "8d80b11bb82568ca"
+            ]
+        ]
+    },
+    {
+        "id": "8d80b11bb82568ca",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "round",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round(payload, 2)\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1430,
+        "y": 420,
+        "wires": [
+            [
+                "d08a1d11e00226d4"
+            ]
+        ]
+    },
+    {
+        "id": "af2dd9a73a4f3f2b",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.soc",
+        "rules": [
+            {
+                "t": "set",
+                "p": "Soc",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1600,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "db6601fea9a50125",
+        "type": "average",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "soc",
+        "x": 1360,
+        "y": 560,
+        "wires": [
+            [
+                "af2dd9a73a4f3f2b"
+            ]
+        ]
+    },
+    {
+        "id": "f2f8f0d31bf123b1",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.voltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "Voltage",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1610,
+        "y": 700,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d73b95f5eb35761d",
+        "type": "average",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "v",
+        "x": 1260,
+        "y": 700,
+        "wires": [
+            [
+                "4893fdbd3a9bb85d"
+            ]
+        ]
+    },
+    {
+        "id": "4893fdbd3a9bb85d",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "round",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$round(payload, 2)\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1430,
+        "y": 700,
+        "wires": [
+            [
+                "f2f8f0d31bf123b1"
+            ]
+        ]
+    },
+    {
+        "id": "1f18200fb8b2b66c",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.numberBlockCharge",
+        "rules": [
+            {
+                "t": "set",
+                "p": "ModulesBlockingCharge",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1650,
+        "y": 820,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "68a9988318cef55e",
+        "type": "sum",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "noBlCh",
+        "x": 1390,
+        "y": 820,
+        "wires": [
+            [
+                "1f18200fb8b2b66c"
+            ]
+        ]
+    },
+    {
+        "id": "42ea29a85faf5240",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 780,
+        "wires": [
+            [
+                "68a9988318cef55e"
+            ]
+        ]
+    },
+    {
+        "id": "c1a9c65a5383bf26",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 840,
+        "wires": [
+            [
+                "68a9988318cef55e"
+            ]
+        ]
+    },
+    {
+        "id": "4cfb13b96af141ab",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 660,
+        "wires": [
+            [
+                "d73b95f5eb35761d"
+            ]
+        ]
+    },
+    {
+        "id": "e97a5840f372c2b0",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 720,
+        "wires": [
+            [
+                "d73b95f5eb35761d"
+            ]
+        ]
+    },
+    {
+        "id": "65a487a0fe6518a6",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 540,
+        "wires": [
+            [
+                "db6601fea9a50125"
+            ]
+        ]
+    },
+    {
+        "id": "c93c34ea9876d2fe",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 600,
+        "wires": [
+            [
+                "db6601fea9a50125"
+            ]
+        ]
+    },
+    {
+        "id": "68b0a7430466a7cb",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 380,
+        "wires": [
+            [
+                "4a124fdd844bcd85"
+            ]
+        ]
+    },
+    {
+        "id": "67303ad5a2c17f41",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 460,
+        "wires": [
+            [
+                "4a124fdd844bcd85"
+            ]
+        ]
+    },
+    {
+        "id": "c93b816d66e90a13",
+        "type": "complete",
+        "z": "b30afe078298449f",
+        "name": "",
+        "scope": [
+            "9216025ddb5562ab"
+        ],
+        "uncaught": false,
+        "x": 110,
+        "y": 620,
+        "wires": [
+            [
+                "57844e67f871011b",
+                "fb92ea0e0b39be29"
+            ]
+        ]
+    },
+    {
+        "id": "57844e67f871011b",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 Prefix",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "\"N/\" & $flowContext(\"VenusID\") & \"/battery/\" \t& $flowContext(\"bmsDeviceID1\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "action",
+                "pt": "msg",
+                "to": "subscribe",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 480,
+        "wires": [
+            [
+                "7a6fe6e3998143d2",
+                "9af6b9dcee9ab36e",
+                "58e680c32844b7f6",
+                "57fcd0b8a1a6c5b7"
+            ]
+        ]
+    },
+    {
+        "id": "fb92ea0e0b39be29",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 Prefix",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "\"N/\" & $flowContext(\"VenusID\") & \"/battery/\" \t& $flowContext(\"bmsDeviceID2\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "action",
+                "pt": "msg",
+                "to": "subscribe",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 700,
+        "wires": [
+            [
+                "581fb6c4bb99ab5a",
+                "6dafa12933d141be",
+                "98eb6b6aa7cf7d3a",
+                "ce78e84f02cf05ad"
+            ]
+        ]
+    },
+    {
+        "id": "ecac2c9a164451a7",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 CVL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Info/MaxChargeVoltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1100,
+        "wires": [
+            [
+                "0f07bcb081a59bbb"
+            ]
+        ]
+    },
+    {
+        "id": "818277c244b75e9e",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 CCL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Info/MaxChargeCurrent\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1160,
+        "wires": [
+            [
+                "42cfb292d6840a22"
+            ]
+        ]
+    },
+    {
+        "id": "a52049b52905570b",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 DCL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Info/MaxDischargeCurrent\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1220,
+        "wires": [
+            [
+                "b82dc25aba270ede"
+            ]
+        ]
+    },
+    {
+        "id": "763f0905d949709c",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 MaxCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/MaxCellVoltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 1280,
+        "wires": [
+            [
+                "dc82c4b7f5c6aef0"
+            ]
+        ]
+    },
+    {
+        "id": "479bd96782ed7d88",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 MinCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/MinCellVoltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 1340,
+        "wires": [
+            [
+                "dfa575bbbd98b1af"
+            ]
+        ]
+    },
+    {
+        "id": "0f07bcb081a59bbb",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1100,
+        "wires": [
+            [
+                "22f9f0efdd825859"
+            ]
+        ]
+    },
+    {
+        "id": "42cfb292d6840a22",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1160,
+        "wires": [
+            [
+                "f8ecab0a426e7e7e"
+            ]
+        ]
+    },
+    {
+        "id": "b82dc25aba270ede",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1220,
+        "wires": [
+            [
+                "6926fd18ece22a15"
+            ]
+        ]
+    },
+    {
+        "id": "dc82c4b7f5c6aef0",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1280,
+        "wires": [
+            [
+                "4dff1f360ada1dce"
+            ]
+        ]
+    },
+    {
+        "id": "dfa575bbbd98b1af",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1340,
+        "wires": [
+            [
+                "91a664cb267d35de"
+            ]
+        ]
+    },
+    {
+        "id": "91a664cb267d35de",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.minCellVoltage1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "minCellVoltage1",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1200,
+        "y": 1340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4dff1f360ada1dce",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.maxCellVoltage1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "maxCellVoltage1",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1200,
+        "y": 1280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "22f9f0efdd825859",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.CVL1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "CVL1",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1160,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f8ecab0a426e7e7e",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.CCL1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "CCL1",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1170,
+        "y": 1160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6926fd18ece22a15",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.DCL1",
+        "rules": [
+            {
+                "t": "set",
+                "p": "DCL1",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1170,
+        "y": 1220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5e808dd0ad9c5d25",
+        "type": "complete",
+        "z": "b30afe078298449f",
+        "name": "",
+        "scope": [
+            "9216025ddb5562ab"
+        ],
+        "uncaught": false,
+        "x": 130,
+        "y": 1220,
+        "wires": [
+            [
+                "8bc190782369193c"
+            ]
+        ]
+    },
+    {
+        "id": "8bc190782369193c",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS1 Prefix",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "\"N/\" & $flowContext(\"VenusID\") & \"/battery/\" \t& $flowContext(\"bmsDeviceID1\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "action",
+                "pt": "msg",
+                "to": "subscribe",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 1220,
+        "wires": [
+            [
+                "ecac2c9a164451a7",
+                "818277c244b75e9e",
+                "a52049b52905570b",
+                "763f0905d949709c",
+                "479bd96782ed7d88"
+            ]
+        ]
+    },
+    {
+        "id": "d77b0a9e44b9e745",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 CCL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic &  \"/Info/MaxChargeCurrent\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1480,
+        "wires": [
+            [
+                "c6323626a41fc898"
+            ]
+        ]
+    },
+    {
+        "id": "11168ed2baeb28e1",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 DCL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Info/MaxDischargeCurrent\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1540,
+        "wires": [
+            [
+                "5a91256cb4c86217"
+            ]
+        ]
+    },
+    {
+        "id": "f0cfde3bfcc56916",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 MaxCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/MaxCellVoltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 1600,
+        "wires": [
+            [
+                "0e85401af2efcab9"
+            ]
+        ]
+    },
+    {
+        "id": "0351426853a3da84",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 MinCellVoltage",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/System/MinCellVoltage\"\t",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 640,
+        "y": 1660,
+        "wires": [
+            [
+                "69e9592c3bd74620"
+            ]
+        ]
+    },
+    {
+        "id": "3aa70d596ac27105",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.minCellVoltage2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "minCellVoltage2",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1220,
+        "y": 1660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6b77425a63152ee6",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.maxCellVoltage2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "maxCellVoltage2",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1220,
+        "y": 1600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c11cc2841cbdf8a3",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.CVL2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "CVL2",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1180,
+        "y": 1420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "09c1bab52b04620e",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.CCL2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "CCL2",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1190,
+        "y": 1480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "465a8c799dcedc47",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "flow.DCL2",
+        "rules": [
+            {
+                "t": "set",
+                "p": "DCL2",
+                "pt": "flow",
+                "to": "payload.value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1190,
+        "y": 1540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "88513aac73d87e56",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1420,
+        "wires": [
+            [
+                "c11cc2841cbdf8a3"
+            ]
+        ]
+    },
+    {
+        "id": "c6323626a41fc898",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1480,
+        "wires": [
+            [
+                "09c1bab52b04620e"
+            ]
+        ]
+    },
+    {
+        "id": "5a91256cb4c86217",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1540,
+        "wires": [
+            [
+                "465a8c799dcedc47"
+            ]
+        ]
+    },
+    {
+        "id": "0e85401af2efcab9",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1600,
+        "wires": [
+            [
+                "6b77425a63152ee6"
+            ]
+        ]
+    },
+    {
+        "id": "69e9592c3bd74620",
+        "type": "mqtt in",
+        "z": "b30afe078298449f",
+        "name": "",
+        "topic": "",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "0242d5524874fe79",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 1,
+        "x": 910,
+        "y": 1660,
+        "wires": [
+            [
+                "3aa70d596ac27105"
+            ]
+        ]
+    },
+    {
+        "id": "7376a502bd4f4d2d",
+        "type": "complete",
+        "z": "b30afe078298449f",
+        "name": "",
+        "scope": [
+            "9216025ddb5562ab"
+        ],
+        "uncaught": false,
+        "x": 110,
+        "y": 1560,
+        "wires": [
+            [
+                "1a9fee44159b7b3e"
+            ]
+        ]
+    },
+    {
+        "id": "1a9fee44159b7b3e",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 Prefix",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "\"N/\" & $flowContext(\"VenusID\") & \"/battery/\" \t& $flowContext(\"bmsDeviceID2\")",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "action",
+                "pt": "msg",
+                "to": "subscribe",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 350,
+        "y": 1560,
+        "wires": [
+            [
+                "14e28b8deb0d759c",
+                "d77b0a9e44b9e745",
+                "11168ed2baeb28e1",
+                "f0cfde3bfcc56916",
+                "0351426853a3da84"
+            ]
+        ]
+    },
+    {
+        "id": "14e28b8deb0d759c",
+        "type": "change",
+        "z": "b30afe078298449f",
+        "name": "BMS2 CVL",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "topic & \"/Info/MaxChargeVoltage\"",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1420,
+        "wires": [
+            [
+                "88513aac73d87e56"
+            ]
+        ]
+    },
+    {
+        "id": "0242d5524874fe79",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
