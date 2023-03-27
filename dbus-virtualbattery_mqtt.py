@@ -104,7 +104,8 @@ def on_message(client, userdata, msg):
                 maxChargeCurrent = float(jsonpayload["MaxChargeCurrent"])
                 maxDischargeCurrent = float(jsonpayload["MaxDischargeCurrent"])
                 maxChargeVoltage = float(jsonpayload["MaxChargeVoltage"])
-                internalFailure = 0
+                if (int(jsonpayload.get("InternalFailure")) == 0): internalFailure = 0
+                else: setFailsafeSettings()
                 lastMessage = time.time()
 
                 dbusObj._update()
