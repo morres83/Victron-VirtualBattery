@@ -33,7 +33,7 @@ soc, maxCellTemperature, minCellTemperature = 0, 0, 0
 maxCellVoltage, minCellVoltage = 0, 0
 modulesBlockingCharge = 0
 maxChargeCurrent, maxDischargeCurrent, maxChargeVoltage = 0, 0, 0
-internalFailure = 0
+internalFailure, lowVoltage_alarm = 0, 0
 lastMessage = time.time()
 
 def setFailsafeSettings():
@@ -84,7 +84,7 @@ def on_message(client, userdata, msg):
     try:
         global lastMessage, internalFailure
         global voltage, current, power, soc #mandatory
-        global maxCellTemperature, minCellTemperature
+        global maxCellTemperature, minCellTemperature, lowVoltage_alarm
         global maxCellVoltage, minCellVoltage, modulesBlockingCharge
         global maxChargeCurrent, maxDischargeCurrent, maxChargeVoltage #mandatory
         if msg.topic == virtualBatteryMQTTPath:   # JSON String vom Broker
@@ -100,6 +100,7 @@ def on_message(client, userdata, msg):
                 maxCellVoltage = float(jsonpayload.get("MaxCellVoltage") or 0)
                 minCellVoltage = float(jsonpayload.get("MinCellVoltage") or 0)
                 modulesBlockingCharge = int(jsonpayload.get("ModulesBlockingCharge") or 0)
+                lowVoltage_alarm = int(jsonpayload.get("LowVoltage_alarm") or 0)
 
                 maxChargeCurrent = float(jsonpayload["MaxChargeCurrent"])
                 maxDischargeCurrent = float(jsonpayload["MaxDischargeCurrent"])
@@ -164,7 +165,7 @@ class DbusVirtualBatService(object):
         # self._dbusservice.add_path('/System/NrOfModulesBlockingDischarge', None, writeable=True)         
         
         # Create alarm paths
-        # self._dbusservice.add_path('/Alarms/LowVoltage', None, writeable=True)
+        self._dbusservice.add_path('/Alarms/LowVoltage', None, writeable=True)
         # self._dbusservice.add_path('/Alarms/HighVoltage', None, writeable=True)
         # self._dbusservice.add_path('/Alarms/LowCellVoltage', None, writeable=True)
         # self._dbusservice.add_path('/Alarms/LowSoc', None, writeable=True)
@@ -214,7 +215,7 @@ class DbusVirtualBatService(object):
             bus['/System/NrOfModulesBlockingCharge'] = modulesBlockingCharge
             # bus['/System/NrOfModulesBlockingDischarge'] = NrOfModulesBlockingDischarge
         
-            # bus['/Alarms/LowVoltage'] = LowVoltage_alarm
+            bus['/Alarms/LowVoltage'] = lowVoltage_alarm
             # bus['/Alarms/HighVoltage'] = HighVoltage_alarm
             # bus['/Alarms/LowCellVoltage'] = LowCellVoltage_alarm
             # bus['/Alarms/LowSoc'] = LowSoc_alarm
